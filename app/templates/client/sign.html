@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Conferma documento{% endblock %}
+{% block bodyclass %}client{% endblock %}
+{% block nav %}<span class="muted small">Pagina cliente · link riservato</span>{% endblock %}
+{% block content %}
+<div class="client-wrap">
+  <section class="card">
+    <p class="eyebrow">{{ org }}</p>
+    <h1>{{ req.title }}</h1>
+    <p>Gentile <strong>{{ req.client_first_name }} {{ req.client_last_name }}</strong>, {{ sender.name if sender else 'l\'operatore' }} le chiede di visualizzare e confermare questo documento.</p>
+    {% if req.message %}<blockquote class="quote">{{ req.message }}</blockquote>{% endif %}
+    <p class="muted small">Il collegamento scade il {{ fmt_local(req.expires_at, False) }}. Non è richiesta alcuna registrazione.</p>
+  </section>
+
+  <section class="card" id="documento">
+    <div class="row-between"><h2>1 · Il documento</h2>
+      <a class="btn btn-sm" href="{{ url_for('client.download', token=token, which='documento') }}">Scarica PDF</a></div>
+    <p class="muted small">Il documento è compilato con i suoi dati ed è stato congelato: qualsiasi modifica richiederebbe una nuova accettazione.</p>
+    <div class="doc-viewer">
+      {% for n in range(page_count) %}
+        <figure class="doc-page"><img src="{{ url_for('client.page', token=token, n=n) }}" alt="Pagina {{ n + 1 }}" loading="lazy"><figcaption class="muted small">Pagina {{ n + 1 }} di {{ page_count }}</figcaption></figure>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card" id="dati">
+    <h2>2 · Controlla i tuoi dati</h2>
+    <dl class="dl">
+      <dt>Nome</dt><dd>{{ req.client_first_name }}</dd>
+      <dt>Cognome</dt><dd>{{ req.client_last_name }}</dd>
+      <dt>Codice fiscale</dt><dd class="mono">{{ req.client_fiscal_code }}</dd>
+      <dt>Link ricevuto via</dt><dd>{{ 'WhatsApp' if req.channel == 'whatsapp' else 'Email' }} · {{ recipient }}</dd>
+      <dt>Codice OTP via WhatsApp a</dt><dd>{{ mask_phone(req.client_phone) }}</dd>
+    </dl>
+    {% if req.status in ('inviata', 'aperta') %}
+    <details class="dispute">
+      <summary class="btn btn-ghost btn-sm">I dati non sono corretti</summary>
+      <form method="post" action="{{ url_for('client.dispute', token=token) }}" class="form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <label>Indichi cosa non è corretto <textarea name="reason" rows="2" maxlength="500" required placeholder="es. il cognome è scritto male"></textarea></label>
+        <button class="btn btn-danger" type="submit">Segnala e interrompi la firma</button>
+        <p class="muted small">La richiesta verrà interrotta e l'operatore avvisato. Non sarà possibile firmare questa versione.</p>
+      </form>
+    </details>
+    {% endif %}
+  </section>
+
+  {% if req.status in ('inviata', 'aperta') %}
+  <section class="card" id="dichiarazione">
+    <h2>3 · Dichiarazione di sottoscrizione</h2>
+    <form method="post" action="{{ url_for('client.accept', token=token) }}" class="form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label class="check big-check"><input type="checkbox" name="accept" value="yes" required>
+        <span>{{ req.declaration_text }}</span></label>
+      <button class="btn btn-primary btn-block" type="submit">Accetto e richiedo il codice di conferma</button>
+      <p class="muted small">Riceverà un codice OTP via WhatsApp al numero {{ mask_phone(req.client_phone) }}.</p>
+    </form>
+  </section>
+  {% elif req.status == 'in_corso' %}
+  <section class="card" id="otp">
+    <h2>3 · Dichiarazione accettata ✓</h2>
+    <p class="muted small">Accettata il {{ fmt_local(req.declaration_accepted_at, False) }}.</p>
+    <h2>4 · Inserisci il codice di conferma</h2>
+    {% if otp_pending %}
+      <p>Abbiamo inviato un codice di {{ otp_len }} cifre via WhatsApp a <strong>{{ mask_phone(req.client_phone) }}</strong>. È valido {{ otp_minutes }} minuti e può essere usato una sola volta.</p>
+    {% else %}
+      <p>Nessun codice attivo. Richieda un nuovo codice per procedere.</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('client.otp_verify', token=token) }}" class="form otp-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label>Codice OTP
+        <input type="text" name="otp" inputmode="numeric" pattern="[0-9]{{ '{' }}{{ otp_len }}{{ '}' }}" maxlength="{{ otp_len }}" autocomplete="one-time-code" class="otp-input mono" required {% if not otp_pending %}disabled{% endif %}>
+      </label>
+      <button class="btn btn-accent btn-block btn-lg" type="submit" {% if not otp_pending %}disabled{% endif %}>Conferma e firma</button>
+    </form>
+    <form method="post" action="{{ url_for('client.otp_send', token=token) }}" class="center">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn btn-ghost btn-sm" type="submit">Non ho ricevuto il codice: invia di nuovo</button>
+    </form>
+  </section>
+  {% endif %}
+
+  <p class="muted small" id="geo-note" data-url="{{ url_for('client.geo', token=token) }}" data-csrf="{{ csrf_token() }}">Posizione: il browser può chiederle il consenso a condividere la posizione; è facoltativa e viene annotata nell'Audit Trail solo se fornita.</p>
+  <p class="muted small legal">Questo è un processo di firma elettronica semplice: la sua conferma esplicita tramite codice OTP viene registrata insieme alla cronologia degli eventi. Non è una firma digitale crittografica, avanzata o qualificata.</p>
+</div>
+{% endblock %}

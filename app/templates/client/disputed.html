@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Segnalazione registrata{% endblock %}
+{% block bodyclass %}client{% endblock %}
+{% block nav %}<span class="muted small">Pagina cliente</span>{% endblock %}
+{% block content %}
+<div class="client-wrap">
+  <section class="card">
+    <h1>Segnalazione registrata</h1>
+    <p>Grazie. La firma è stata interrotta e l'operatore è stato avvisato: riceverà una nuova richiesta con i dati corretti.</p>
+    <p class="muted small">Riferimento <span class="mono">{{ req.id }}</span>. Questo collegamento non è più utilizzabile per firmare.</p>
+  </section>
+</div>
+{% endblock %}

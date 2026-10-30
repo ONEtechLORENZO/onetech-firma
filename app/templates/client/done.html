@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Documento confermato{% endblock %}
+{% block bodyclass %}client{% endblock %}
+{% block nav %}<span class="muted small">Pagina cliente · link riservato</span>{% endblock %}
+{% block content %}
+<div class="client-wrap">
+  <section class="card done">
+    <div class="check-big" aria-hidden="true">✓</div>
+    <p class="eyebrow">{{ org }}</p>
+    <h1>Documento confermato</h1>
+    <p>Grazie, <strong>{{ req.client_first_name }}</strong>. La sua conferma è stata registrata il <strong>{{ fmt_local(req.signed_at) }}</strong>.</p>
+    <p class="muted small">Riferimento richiesta <span class="mono">{{ req.id }}</span>. L'istituto ha ricevuto automaticamente il documento finale e l'Audit Trail.</p>
+    <div class="actions-stack">
+      <a class="btn btn-primary btn-block" href="{{ url_for('client.download', token=token, which='finale') }}">Scarica il documento finale (PDF)</a>
+      <a class="btn btn-block" href="{{ url_for('client.download', token=token, which='audit') }}">Scarica l'Audit Trail (PDF)</a>
+    </div>
+    <dl class="dl small">
+      <dt>Impronta SHA-256 documento finale</dt><dd class="mono break">{{ req.sha256_final }}</dd>
+      <dt>Impronta SHA-256 Audit Trail</dt><dd class="mono break">{{ req.sha256_audit }}</dd>
+    </dl>
+    <p class="muted small">Può conservare questi file: l'impronta SHA-256 permette di verificare in futuro che un file sia identico a quello archiviato.</p>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Notifiche{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Notifiche</h1><p class="muted">Completamenti e segnalazioni dei clienti.{% if DEMO %} In modalità demo la notifica email all'operatore è simulata (vedi Comunicazioni).{% endif %}</p></div></div>
+<div class="card">
+{% if rows %}
+  <ul class="list">
+  {% for n in rows %}
+    <li><div>{{ n.text }}<div class="muted small">{{ fmt_local(n.created_at, False) }}</div></div>
+      {% if n.request_id %}<a class="btn btn-sm" href="{{ url_for('operator.request_detail', req_id=n.request_id) }}">Apri richiesta</a>{% endif %}</li>
+  {% endfor %}
+  </ul>
+{% else %}<p class="muted">Nessuna notifica.</p>{% endif %}
+</div>
+{% endblock %}

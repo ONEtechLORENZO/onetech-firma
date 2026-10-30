@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Richieste{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Richieste di firma</h1>
+    <p class="muted">Stato di ogni invio, documento finale e Audit Trail quando completato.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('operator.request_new') }}">+ Nuova richiesta</a>
+</div>
+
+<div class="chips">
+  <a href="{{ url_for('operator.requests_list') }}" class="chip {% if not filter_status %}on{% endif %}">Tutte</a>
+  {% for key, label in STATUS_LABELS.items() %}
+    <a href="{{ url_for('operator.requests_list', stato=key) }}" class="chip {% if filter_status == key %}on{% endif %}">
+      <span class="dot st-{{ key }}"></span>{{ label }} <span class="muted">{{ counts.get(key, 0) }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+{% if rows %}
+<div class="table-wrap card">
+<table class="table">
+  <thead><tr><th>Richiesta</th><th>Cliente</th><th>Canale</th><th>Stato</th><th>Scadenza link</th><th>Firmata il</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td><a class="strong" href="{{ url_for('operator.request_detail', req_id=r.id) }}">{{ r.title or '(senza titolo)' }}</a><div class="muted mono">{{ r.id }}</div></td>
+      <td>{{ r.client_first_name }} {{ r.client_last_name }}<div class="muted mono">{{ r.client_fiscal_code or '—' }}</div></td>
+      <td>{{ 'WhatsApp' if r.channel == 'whatsapp' else 'Email' }}</td>
+      <td><span class="status st-{{ r.status }}">{{ STATUS_LABELS[r.status] }}</span></td>
+      <td class="muted">{{ fmt_local(r.expires_at, False) if r.status in ('inviata','aperta','in_corso','scaduta') else '—' }}</td>
+      <td>{{ fmt_local(r.signed_at, False) if r.signed_at else '—' }}</td>
+      <td class="right">
+        {% if r.status == 'bozza' %}<a class="btn btn-sm" href="{{ url_for('operator.request_fields', req_id=r.id) }}">Continua</a>
+        {% elif r.status == 'completata' %}<a class="btn btn-sm" href="{{ url_for('operator.request_download', req_id=r.id, which='zip') }}">ZIP</a>
+        {% else %}<a class="btn btn-sm" href="{{ url_for('operator.request_detail', req_id=r.id) }}">Apri</a>{% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="card empty">Nessuna richiesta{% if filter_status %} con stato «{{ STATUS_LABELS[filter_status] }}»{% endif %}.</div>
+{% endif %}
+{% endblock %}

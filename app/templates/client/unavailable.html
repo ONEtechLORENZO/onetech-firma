@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Collegamento non disponibile{% endblock %}
+{% block bodyclass %}client{% endblock %}
+{% block nav %}<span class="muted small">Pagina cliente</span>{% endblock %}
+{% block content %}
+<div class="client-wrap">
+  <section class="card">
+    <h1>Collegamento non disponibile</h1>
+    {% if reason == 'scaduto' %}
+      <p>Questo collegamento è scaduto{% if req %} il {{ fmt_local(req.expires_at, False) }}{% endif %}. Per procedere è necessario che l'istituto le invii una nuova richiesta.</p>
+    {% elif reason == 'revocato' %}
+      <p>La richiesta è stata annullata dall'istituto. Se ritiene si tratti di un errore, contatti il suo referente.</p>
+    {% elif reason == 'errore' %}
+      <p>Questa richiesta è stata interrotta{% if req and req.dispute_reason %} a seguito della sua segnalazione{% endif %}. L'istituto le invierà, se necessario, una nuova richiesta con i dati corretti.</p>
+    {% else %}
+      <p>Il collegamento non è valido.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

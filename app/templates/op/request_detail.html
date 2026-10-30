@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}{{ req.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <a class="muted small" href="{{ url_for('operator.requests_list') }}">← Tutte le richieste</a>
+    <h1>{{ req.title or '(senza titolo)' }} <span class="status st-{{ req.status }}">{{ STATUS_LABELS[req.status] }}</span></h1>
+    <p class="muted mono">{{ req.id }}</p>
+  </div>
+  <div class="actions-inline">
+    {% if req.status == 'bozza' %}<a class="btn btn-primary" href="{{ url_for('operator.request_fields', req_id=req.id) }}">Continua la bozza</a>{% endif %}
+    {% if DEMO and client_url and req.status in ('inviata','aperta','in_corso','completata') %}
+      <form method="post" action="{{ url_for('operator.request_open_as_client', req_id=req.id) }}" target="_blank">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="btn btn-accent" type="submit">Apri il link come cliente ↗</button>
+      </form>
+    {% endif %}
+    {% if req.status in ('bozza','inviata','aperta','in_corso','errore') %}
+      <form method="post" action="{{ url_for('operator.request_revoke', req_id=req.id) }}" data-confirm="Revocare la richiesta? Il link non sarà più utilizzabile.">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="btn btn-danger btn-ghost" type="submit">Revoca</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if req.status == 'completata' %}
+<div class="flash flash-ok big">
+  <strong>Completata.</strong> Documento confermato dal cliente il <strong>{{ fmt_local(req.signed_at) }}</strong>.
+  Documento finale e Audit Trail sono archiviati e disponibili qui sotto.
+</div>
+{% elif req.status == 'errore' %}
+<div class="flash flash-error"><strong>Errore:</strong> {{ req.last_error }}
+  {% if req.dispute_reason %}<br>Motivo indicato dal cliente: «{{ req.dispute_reason }}»{% endif %}
+  {% if req.otp_verified_at and not req.path_final %}
+  <form method="post" action="{{ url_for('operator.request_retry', req_id=req.id) }}" class="inline"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-sm" type="submit">Riprova la generazione dei file</button></form>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Cliente e invio</h2>
+    <dl class="dl">
+      <dt>Nome e cognome</dt><dd>{{ req.client_first_name }} {{ req.client_last_name }}</dd>
+      <dt>Codice fiscale</dt><dd class="mono">{{ req.client_fiscal_code or '—' }}</dd>
+      <dt>Link via</dt><dd>{% if req.channel == 'whatsapp' %}WhatsApp · {{ mask_phone(req.client_phone) }}{% else %}Email · {{ mask_email(req.client_email) }}{% endif %}</dd>
+      <dt>OTP via WhatsApp a</dt><dd>{{ mask_phone(req.client_phone) }}</dd>
+      <dt>Riquadro firma</dt><dd>{{ req.signer_role }}{% if req.place %} · luogo: {{ req.place }}{% endif %}</dd>
+      <dt>Inviata il</dt><dd>{{ fmt_local(req.sent_at) if req.sent_at else '—' }}</dd>
+      <dt>Aperta il</dt><dd>{{ fmt_local(req.opened_at) if req.opened_at else '—' }} {% if req.opened_at %}<span class="muted small">(apertura del link, non lettura)</span>{% endif %}</dd>
+      <dt>Scadenza link</dt><dd>{{ fmt_local(req.expires_at) }}</dd>
+      <dt>Firmata il</dt><dd>{{ fmt_local(req.signed_at) if req.signed_at else '—' }}</dd>
+      <dt>Operatore</dt><dd>{{ g.user.name }}</dd>
+    </dl>
+
+    {% if DEMO and demo_otp %}
+    <div class="demo-box">
+      <strong>OTP di test (solo ambiente demo)</strong>
+      <div class="otp-demo mono">{{ demo_otp.demo_code }}</div>
+      <div class="small muted">Valido fino al {{ fmt_local(demo_otp.expires_at, False) }}. In modalità reale il codice viaggia solo su WhatsApp verso il cliente e non è mai visibile qui.</div>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Documenti e impronte SHA-256</h2>
+    <ul class="files">
+      <li><div><strong>PDF originale</strong><div class="mono small muted">{{ doc.sha256_original if doc else '—' }}</div></div>
+        {% if doc %}<a class="btn btn-sm" href="{{ url_for('operator.request_download', req_id=req.id, which='originale') }}">Scarica</a>{% endif %}</li>
+      <li><div><strong>PDF compilato</strong> <span class="muted small">(presentato al cliente)</span><div class="mono small muted">{{ req.sha256_filled or 'non ancora generato' }}</div></div>
+        {% if req.path_filled %}<a class="btn btn-sm" href="{{ url_for('operator.request_download', req_id=req.id, which='compilato') }}">Scarica</a>{% endif %}</li>
+      <li><div><strong>PDF finale</strong> <span class="muted small">(dopo la conferma)</span><div class="mono small muted">{{ req.sha256_final or 'non ancora generato' }}</div></div>
+        {% if req.path_final %}<a class="btn btn-sm" href="{{ url_for('operator.request_download', req_id=req.id, which='finale') }}">Scarica</a>{% endif %}</li>
+      <li><div><strong>Audit Trail PDF</strong><div class="mono small muted">{{ req.sha256_audit or 'non ancora generato' }}</div></div>
+        {% if req.path_audit %}<a class="btn btn-sm" href="{{ url_for('operator.request_download', req_id=req.id, which='audit') }}">Scarica</a>{% endif %}</li>
+    </ul>
+    {% if req.status == 'completata' %}
+      <a class="btn btn-primary btn-block" href="{{ url_for('operator.request_download', req_id=req.id, which='zip') }}">Scarica tutto in ZIP (finale + Audit Trail + impronte)</a>
+    {% endif %}
+    <p class="muted small">Le impronte SHA-256 consentono di verificare l'integrità dei file archiviati. Non sono una firma digitale né una marca temporale.</p>
+  </section>
+</div>
+
+<section class="card">
+  <div class="row-between">
+    <h2>Cronologia eventi</h2>
+    <span class="chip {% if chain_ok %}chip-ok{% else %}chip-bad{% endif %}">{% if chain_ok %}Registro integro{% else %}REGISTRO ALTERATO{% endif %} · {{ n_events }} eventi · catena di hash</span>
+  </div>
+  <div class="table-wrap">
+  <table class="table table-sm">
+    <thead><tr><th>Data e ora</th><th>Evento</th><th>Attore</th><th>IP · dispositivo</th><th>Dettagli</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+      {% set d = details(e) %}
+      <tr>
+        <td class="nowrap">{{ fmt_local(e.ts_utc) }}</td>
+        <td><strong>{{ EVENT_LABELS.get(e.type, e.type) }}</strong></td>
+        <td>{% if e.actor == 'client' %}Cliente{% elif e.actor == 'system' %}Sistema{% else %}Operatore{% endif %}</td>
+        <td class="small muted">{{ e.ip or 'non rilevato' }}{% if e.user_agent %}<br>{{ e.user_agent[:70] }}{% endif %}</td>
+        <td class="small">{% for k, v in d.items() %}<div><span class="muted">{{ k }}:</span> {% if k.startswith('sha256') %}<span class="mono">{{ v[:16] }}…</span>{% else %}{{ v }}{% endif %}</div>{% endfor %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Comunicazioni {% if DEMO %}<span class="tag-demo">simulate</span>{% endif %}</h2>
+  {% if outbox %}
+    {% for m in outbox %}
+      <article class="msg">
+        <header><span class="tag tag-{{ m.status }}">{{ m.status.replace('_', ' ') }}</span> <strong>{{ 'WhatsApp' if m.channel == 'whatsapp' else 'Email' }}</strong> → {{ m.recipient_masked }} · <span class="muted">{{ m.purpose }}</span> · <span class="muted small">{{ fmt_local(m.created_at, False) }}</span></header>
+        {% if m.subject %}<div class="small"><strong>{{ m.subject }}</strong></div>{% endif %}
+        <pre class="msg-body">{{ m.body }}</pre>
+        {% if m.error %}<div class="err">{{ m.error }}</div>{% endif %}
+      </article>
+    {% endfor %}
+  {% else %}<p class="muted">Nessuna comunicazione ancora.</p>{% endif %}
+</section>
+{% endblock %}

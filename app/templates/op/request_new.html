@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Nuova richiesta{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Nuova richiesta</h1><p class="muted">Carica un PDF oppure parti da un modello salvato.</p></div></div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>1 · Carica un PDF</h2>
+    <form method="post" enctype="multipart/form-data" class="form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label>Titolo della richiesta (modificabile dopo) <input type="text" name="title" maxlength="120" placeholder="es. Modulo di adesione"></label>
+      <label>File PDF (max {{ max_mb }} MB)
+        <input type="file" name="pdf" accept="application/pdf,.pdf" required>
+      </label>
+      <p class="muted small">Il PDF può non avere campi compilabili: posizionerai i campi a mano nel passo successivo. Se il PDF ha già campi compilabili (nome, cognome, codice fiscale, firma), vengono proposti come punto di partenza.</p>
+      <button class="btn btn-primary" type="submit">Carica e continua</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>2 · Oppure usa un modello</h2>
+    {% if templates %}
+      <ul class="list">
+      {% for t in templates %}
+        <li>
+          <div><strong>{{ t.name }}</strong><div class="muted small">{{ t.filename }} · {{ t.page_count }} pagine · campi già posizionati</div></div>
+          <form method="post" action="{{ url_for('operator.template_use', tpl_id=t.id) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button class="btn btn-sm" type="submit">Usa modello</button>
+          </form>
+        </li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">Nessun modello salvato. Dopo aver posizionato i campi potrai salvare documento e disposizione come modello.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,5 @@
+<ol class="steps">
+  <li class="{% if step == 1 %}on{% elif step > 1 %}done{% endif %}"><a href="{{ url_for('operator.request_fields', req_id=req.id) }}"><span>1</span> Campi sul documento</a></li>
+  <li class="{% if step == 2 %}on{% elif step > 2 %}done{% endif %}"><a href="{{ url_for('operator.request_data', req_id=req.id) }}"><span>2</span> Dati del cliente</a></li>
+  <li class="{% if step == 3 %}on{% endif %}"><a href="{{ url_for('operator.request_preview', req_id=req.id) }}"><span>3</span> Anteprima e invio</a></li>
+</ol>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Modelli{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Modelli</h1><p class="muted">Documento + disposizione dei campi, riutilizzabili per nuove richieste.</p></div>
+<a class="btn btn-primary" href="{{ url_for('operator.request_new') }}">+ Nuova richiesta</a></div>
+<div class="card">
+{% if templates %}
+  <ul class="list">
+  {% for t in templates %}
+    <li>
+      <div><strong>{{ t.name }}</strong><div class="muted small">{{ t.filename }} · {{ t.page_count }} pagine · creato il {{ fmt_local(t.created_at, False) }} · <span class="mono">{{ t.id }}</span></div></div>
+      <form method="post" action="{{ url_for('operator.template_use', tpl_id=t.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-sm" type="submit">Usa modello</button></form>
+    </li>
+  {% endfor %}
+  </ul>
+{% else %}<p class="muted">Nessun modello. Puoi salvarne uno dall'editor dei campi.</p>{% endif %}
+</div>
+{% endblock %}

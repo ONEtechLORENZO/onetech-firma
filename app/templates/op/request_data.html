@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Dati del cliente{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ req.title or 'Nuova richiesta' }} <span class="muted mono small">{{ req.id }}</span></h1>
+<p class="muted">Dati che verranno riportati nel documento e recapito a cui inviare il link.</p></div></div>
+{% include "op/_steps.html" %}
+
+<form method="post" class="card form form-wide">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+  <h2>Richiesta</h2>
+  <label>Titolo <input type="text" name="title" maxlength="120" required value="{{ form.title or '' }}">{% if errors.title %}<span class="err">{{ errors.title }}</span>{% endif %}</label>
+  <label>Messaggio al cliente (facoltativo) <textarea name="message" maxlength="500" rows="2">{{ form.message or '' }}</textarea></label>
+
+  <h2>Cliente</h2>
+  <div class="row">
+    <label>Nome <input type="text" name="first_name" maxlength="80" required value="{{ form.first_name or '' }}">{% if errors.first_name %}<span class="err">{{ errors.first_name }}</span>{% endif %}</label>
+    <label>Cognome <input type="text" name="last_name" maxlength="80" required value="{{ form.last_name or '' }}">{% if errors.last_name %}<span class="err">{{ errors.last_name }}</span>{% endif %}</label>
+  </div>
+  <label>Codice fiscale <input type="text" name="fiscal_code" maxlength="16" required class="mono upper" value="{{ form.fiscal_code or '' }}" autocapitalize="characters">{% if errors.fiscal_code %}<span class="err">{{ errors.fiscal_code }}</span>{% endif %}
+    <span class="help">Viene eseguito solo un controllo formale (formato e carattere di controllo). Non è una verifica dell'identità.</span></label>
+
+  <h2>Recapito e canale</h2>
+  <div class="row">
+    <label>Cellulare WhatsApp (obbligatorio: riceve l'OTP) <input type="tel" name="phone" maxlength="20" placeholder="+39 ..." required value="{{ form.phone or '' }}">{% if errors.phone %}<span class="err">{{ errors.phone }}</span>{% endif %}</label>
+    <label>Email <input type="email" name="email" maxlength="254" value="{{ form.email or '' }}">{% if errors.email %}<span class="err">{{ errors.email }}</span>{% endif %}</label>
+  </div>
+  <fieldset class="radio-row">
+    <legend>Canale di invio del link (l'OTP viaggia sempre su WhatsApp)</legend>
+    <label class="radio"><input type="radio" name="channel" value="email" {% if (form.channel or 'email') == 'email' %}checked{% endif %}> Email <span class="muted small">({{ services.email }})</span></label>
+    <label class="radio"><input type="radio" name="channel" value="whatsapp" {% if form.channel == 'whatsapp' %}checked{% endif %}> WhatsApp <span class="muted small">({{ services.whatsapp }})</span></label>
+    {% if errors.channel %}<span class="err">{{ errors.channel }}</span>{% endif %}
+  </fieldset>
+  <h2>Riquadro firma</h2>
+  <div class="row">
+    <label>Ruolo del firmatario (intestazione del riquadro) <input type="text" name="signer_role" maxlength="40" value="{{ form.signer_role or 'Il Cliente' }}" placeholder="es. Il Delegante"></label>
+    <label>Luogo di sottoscrizione (facoltativo) <input type="text" name="place" maxlength="80" value="{{ form.place or '' }}" placeholder="es. 25045 CASTEGNATO BS"><span class="help">Compare nel riquadro firma e nel campo «Luogo e data». È un dato dichiarato, non rilevato.</span></label>
+  </div>
+  <label class="short">Scadenza del link (giorni, max {{ max_days }}) <input type="number" name="expiry_days" min="1" max="{{ max_days }}" value="{{ form.expiry_days or 7 }}"></label>
+
+  <div class="actions">
+    <a class="btn btn-ghost" href="{{ url_for('operator.request_fields', req_id=req.id) }}">← Campi</a>
+    <button class="btn btn-primary" type="submit">Salva e vai all'anteprima →</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Accesso operatore{% endblock %}
+{% block nav %}{% endblock %}
+{% block content %}
+<div class="auth-card card">
+  <h1>Area operatore</h1>
+  <p class="muted">Accesso riservato al personale dell'istituto.</p>
+  {% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
+  <form method="post" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>Email <input type="email" name="email" required autocomplete="username" value="{% if DEMO %}operatore@demo.local{% endif %}"></label>
+    <label>Password <input type="password" name="password" required autocomplete="current-password" value="{% if DEMO %}demo1234{% endif %}"></label>
+    <button class="btn btn-primary btn-block" type="submit">Accedi</button>
+  </form>
+  {% if DEMO %}
+  <div class="hint">
+    <strong>Credenziali demo</strong> (precompilate): <code>operatore@demo.local</code> / <code>demo1234</code><br>
+    Seconda organizzazione, per mostrare l'isolamento dei dati: <code>altro@demo.local</code> / <code>demo1234</code>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

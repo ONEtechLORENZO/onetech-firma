@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Campi sul documento{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ req.title or 'Nuova richiesta' }} <span class="muted mono small">{{ req.id }}</span></h1>
+  <p class="muted">Posiziona i campi da compilare e il riquadro della firma. Trascina per spostare, usa l'angolo per ridimensionare.</p></div>
+</div>
+{% include "op/_steps.html" %}
+
+<div class="editor" id="editor">
+  <aside class="editor-side card">
+    <h2>Campi</h2>
+    <p class="muted small">Documento: <strong>{{ doc.filename }}</strong> · {{ doc.page_count }} pagine · SHA-256 <span class="mono">{{ doc.sha256_original[:12] }}…</span></p>
+    <div class="field-buttons">
+      {% for key, label in field_types.items() %}
+        <button type="button" class="btn btn-sm add-field" data-type="{{ key }}" data-label="{{ label }}">+ {{ label }}</button>
+      {% endfor %}
+    </div>
+    <ul class="field-list" id="field-list"></ul>
+    <p class="muted small">Il campo <strong>Firma</strong> è obbligatorio: mostrerà la rappresentazione della conferma (nome, data, riferimento), non una firma grafica.</p>
+    <hr>
+    <label class="check"><input type="checkbox" id="save-template"> Salva documento e disposizione come modello</label>
+    <input type="text" id="template-name" class="hidden" placeholder="Nome del modello" maxlength="120" value="{{ doc.filename.rsplit('.', 1)[0] }}">
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="save-fields">Salva e continua →</button>
+    </div>
+    <div id="editor-msg" class="small"></div>
+  </aside>
+
+  <section class="editor-pages" id="pages">
+    {% for p in pages %}
+      <div class="page-box" data-page="{{ loop.index0 }}" style="aspect-ratio: {{ p.w }} / {{ p.h }};">
+        <div class="page-label">Pagina {{ loop.index }} di {{ pages|length }}{% if p.rotation %} · ruotata {{ p.rotation }}°{% endif %}</div>
+        <img src="{{ url_for('operator.document_page', doc_id=doc.id, n=loop.index0) }}" alt="Pagina {{ loop.index }}" draggable="false">
+        <div class="overlay"></div>
+      </div>
+    {% endfor %}
+  </section>
+</div>
+
+<script type="application/json" id="editor-data">{{ {"fields": fields, "labels": field_types, "saveUrl": url_for('operator.request_fields_save', req_id=req.id), "csrf": csrf_token()} | tojson }}</script>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='editor.js') }}"></script>{% endblock %}

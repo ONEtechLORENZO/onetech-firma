@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Comunicazioni{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Comunicazioni {% if DEMO %}<span class="tag-demo">simulate</span>{% endif %}</h1>
+<p class="muted">{% if DEMO %}Nessun messaggio è stato realmente spedito: qui vedi cosa sarebbe partito. I codici OTP non vengono archiviati nei messaggi.{% else %}Esito dei provider: «inviato» = accettato dal provider; «consegnato» solo a fronte di riscontro.{% endif %}</p>
+<p class="small muted">Stato servizi — Email: <strong>{{ services.email }}</strong> · WhatsApp: <strong>{{ services.whatsapp }}</strong> · OTP: <strong>{{ services.otp }}</strong></p></div></div>
+<div class="card">
+{% if rows %}
+  {% for m in rows %}
+    <article class="msg">
+      <header><span class="tag tag-{{ m.status }}">{{ m.status.replace('_', ' ') }}</span> <strong>{{ 'WhatsApp' if m.channel == 'whatsapp' else 'Email' }}</strong> → {{ m.recipient_masked }} · <span class="muted">{{ m.purpose }}</span>
+        {% if m.request_id %}· <a href="{{ url_for('operator.request_detail', req_id=m.request_id) }}" class="mono">{{ m.request_id }}</a>{% endif %} · <span class="muted small">{{ fmt_local(m.created_at, False) }}</span></header>
+      {% if m.subject %}<div class="small"><strong>{{ m.subject }}</strong></div>{% endif %}
+      <pre class="msg-body">{{ m.body }}</pre>
+      {% if m.error %}<div class="err">{{ m.error }}</div>{% endif %}
+    </article>
+  {% endfor %}
+{% else %}<p class="muted">Nessuna comunicazione.</p>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Anteprima e invio{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ req.title }} <span class="muted mono small">{{ req.id }}</span></h1>
+<p class="muted">Controlla il documento compilato esattamente come lo vedrà il cliente, poi invia.</p></div></div>
+{% include "op/_steps.html" %}
+
+<div class="grid-2 grid-preview">
+  <section class="card summary">
+    <h2>Riepilogo invio</h2>
+    <dl class="dl">
+      <dt>Documento</dt><dd>{{ doc.filename }} · {{ doc.page_count }} pagine</dd>
+      <dt>Destinatario</dt><dd>{{ req.client_first_name }} {{ req.client_last_name }}<br><span class="mono">{{ req.client_fiscal_code }}</span></dd>
+      <dt>Link via</dt><dd>{% if req.channel == 'whatsapp' %}WhatsApp → {{ req.client_phone }}{% else %}Email → {{ req.client_email }}{% endif %}
+        <div class="muted small">Servizio: {{ services.whatsapp if req.channel == 'whatsapp' else services.email }}</div></dd>
+      <dt>OTP via WhatsApp</dt><dd>{{ req.client_phone }} <div class="muted small">Servizio: {{ services.whatsapp }}</div></dd>
+      <dt>Riquadro firma</dt><dd>{{ req.signer_role }}{% if req.place %} · {{ req.place }}{% endif %}</dd>
+      <dt>Scadenza link</dt><dd>{{ fmt_local(req.expires_at, False) }}</dd>
+      {% if req.message %}<dt>Messaggio</dt><dd>{{ req.message }}</dd>{% endif %}
+    </dl>
+    {% if problems %}
+      <div class="flash flash-error"><strong>Prima di inviare:</strong><ul>{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    <form method="post" action="{{ url_for('operator.request_send', req_id=req.id) }}" class="actions">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <a class="btn btn-ghost" href="{{ url_for('operator.request_data', req_id=req.id) }}">← Dati</a>
+      <button class="btn btn-primary" type="submit" {% if problems %}disabled{% endif %}>
+        {% if DEMO %}Invia (simulato){% else %}Invia al cliente{% endif %}
+      </button>
+    </form>
+    <p class="muted small">All'invio il documento compilato viene congelato e ne viene registrata l'impronta SHA-256. {% if DEMO %}In modalità demo nessun messaggio reale viene spedito: il link sarà apribile dalla console.{% endif %}</p>
+  </section>
+
+  <section class="preview-pages">
+    {% for n in range(page_count) %}
+      <figure class="preview-page card">
+        <img src="{{ url_for('operator.request_preview_page', req_id=req.id, n=n) }}" alt="Anteprima pagina {{ n + 1 }}" loading="lazy">
+        <figcaption class="muted small">Pagina {{ n + 1 }} di {{ page_count }}</figcaption>
+      </figure>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}
