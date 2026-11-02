@@ -35,10 +35,6 @@
   {% endwith %}
   {% block content %}{% endblock %}
 </main>
-<footer class="footer wrap">
-  <span>{{ APP_NAME }} · {{ APP_TAGLINE }}</span>
-  <span>Firma elettronica semplice (FES): conferma esplicita tramite OTP. Non è una firma avanzata, qualificata o certificata.</span>
-</footer>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
