@@ -21,6 +21,10 @@
         <button class="btn btn-danger btn-ghost" type="submit">Revoca</button>
       </form>
     {% endif %}
+    <form method="post" action="{{ url_for('operator.request_delete', req_id=req.id) }}" data-confirm="Eliminare definitivamente la richiesta {{ req.id }}? Verranno cancellati anche documenti, Audit Trail e cronologia. L'operazione non si può annullare.">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn btn-danger" type="submit">Elimina</button>
+    </form>
   </div>
 </div>
 

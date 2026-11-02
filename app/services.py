@@ -448,6 +448,28 @@ def org_name(conn, org_id):
     return r["name"] if r else ""
 
 
+def delete_request(conn, req):
+    """Elimina definitivamente una richiesta con eventi, OTP, messaggi, notifiche e file.
+    Il PDF originale viene eliminato solo se non è usato da modelli o da altre richieste."""
+    import shutil
+    org, rid, doc_id = req["org_id"], req["id"], req["document_id"]
+    with transaction(conn):
+        for table in ("otps", "events", "outbox", "notifications"):
+            conn.execute(f"DELETE FROM {table} WHERE request_id=?", (rid,))
+        conn.execute("DELETE FROM requests WHERE id=? AND org_id=?", (rid, org))
+        orphan_doc = doc_id and not conn.execute(
+            "SELECT 1 FROM templates WHERE document_id=? UNION ALL SELECT 1 FROM requests WHERE document_id=?",
+            (doc_id, doc_id)).fetchone()
+        if orphan_doc:
+            conn.execute("DELETE FROM documents WHERE id=? AND org_id=?", (doc_id, org))
+    files, renders = Path(cfg("FILES_DIR")) / org, Path(cfg("RENDER_DIR")) / org
+    folders = [files / rid, renders / "preview" / rid, renders / "client" / rid]
+    if orphan_doc:
+        folders += [files / doc_id, renders / doc_id]
+    for f in folders:
+        shutil.rmtree(f, ignore_errors=True)
+
+
 def revoke_request(conn, req, user):
     if req["status"] not in ACTIVE_STATUSES + ("bozza", "errore"):
         return False

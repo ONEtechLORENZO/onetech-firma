@@ -339,6 +339,15 @@ def request_revoke(req_id):
     return redirect(url_for("operator.request_detail", req_id=req_id))
 
 
+@bp.post("/requests/<req_id>/delete")
+def request_delete(req_id):
+    _csrf()
+    req = _req_or_404(req_id)
+    services.delete_request(get_db(), req)
+    flash(f"Richiesta {req_id} eliminata.", "ok")
+    return redirect(url_for("operator.requests_list"))
+
+
 @bp.post("/requests/<req_id>/retry")
 def request_retry(req_id):
     _csrf()

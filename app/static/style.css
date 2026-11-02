@@ -164,6 +164,9 @@ code { font-family: var(--mono); background: var(--brand-soft); color: var(--nav
 .table td a.strong { text-decoration: none; color: var(--ink); }
 .table td a.strong:hover { color: var(--navy); }
 .table td .mono { font-size: .78rem; }
+.row-actions { display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end; }
+.row-actions form { margin: 0; }
+.btn-icon { padding: 6px 9px; }
 .table-sm td, .table-sm th { padding: 9px 12px; font-size: .84rem; }
 
 /* liste */

@@ -31,11 +31,17 @@
       <td><span class="status st-{{ r.status }}">{{ STATUS_LABELS[r.status] }}</span></td>
       <td class="muted">{{ fmt_local(r.expires_at, False) if r.status in ('inviata','aperta','in_corso','scaduta') else '—' }}</td>
       <td>{{ fmt_local(r.signed_at, False) if r.signed_at else '—' }}</td>
-      <td class="right">
+      <td class="right"><div class="row-actions">
         {% if r.status == 'bozza' %}<a class="btn btn-sm" href="{{ url_for('operator.request_fields', req_id=r.id) }}">Continua</a>
         {% elif r.status == 'completata' %}<a class="btn btn-sm" href="{{ url_for('operator.request_download', req_id=r.id, which='zip') }}">ZIP</a>
         {% else %}<a class="btn btn-sm" href="{{ url_for('operator.request_detail', req_id=r.id) }}">Apri</a>{% endif %}
-      </td>
+        <form method="post" action="{{ url_for('operator.request_delete', req_id=r.id) }}" data-confirm="Eliminare definitivamente la richiesta {{ r.id }}? Verranno cancellati anche documenti, Audit Trail e cronologia. L'operazione non si può annullare.">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-ghost btn-danger btn-icon" type="submit" title="Elimina" aria-label="Elimina richiesta {{ r.id }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </form>
+      </div></td>
     </tr>
   {% endfor %}
   </tbody>

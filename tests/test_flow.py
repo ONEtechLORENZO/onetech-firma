@@ -402,3 +402,28 @@ def test_message_variables(app):
     with app.app_context():
         assert services.whatsapp_link_text(conn, req, "https://x/c/t") == \
             "Buongiorno\nLink al documento da firmare: https://x/c/t"
+
+
+def test_delete_request_removes_rows_and_files(client, app):
+    csrf = login(client)
+    req_id = create_and_send(client, csrf)
+    conn = db(app)
+    req = conn.execute("SELECT * FROM requests WHERE id=?", (req_id,)).fetchone()
+    doc = conn.execute("SELECT * FROM documents WHERE id=?", (req["document_id"],)).fetchone()
+    assert Path(req["path_filled"]).exists() and Path(doc["path_original"]).exists()
+    tok = client_token(app, req_id)
+    # un'altra organizzazione non può eliminarla
+    other = app.test_client()
+    other_csrf = login(other, "altro@demo.local")
+    assert other.post(f"/op/requests/{req_id}/delete", data={"_csrf": other_csrf}).status_code == 404
+    r = client.post(f"/op/requests/{req_id}/delete", data={"_csrf": csrf})
+    assert r.status_code == 302
+    conn = db(app)
+    assert not conn.execute("SELECT 1 FROM requests WHERE id=?", (req_id,)).fetchone()
+    for table in ("events", "otps", "outbox"):
+        assert not conn.execute(f"SELECT 1 FROM {table} WHERE request_id=?", (req_id,)).fetchone()
+    assert not Path(req["path_filled"]).exists() and not Path(doc["path_original"]).exists()
+    assert client.get(f"/c/{tok}").status_code == 404           # il link del cliente non funziona più
+    assert client.get(f"/op/requests/{req_id}").status_code == 404
+    # il PDF del modello demo resta: è usato dal modello
+    assert conn.execute("SELECT COUNT(*) FROM templates t JOIN documents d ON d.id=t.document_id").fetchone()[0] >= 1
