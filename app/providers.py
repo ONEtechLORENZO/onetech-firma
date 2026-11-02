@@ -8,10 +8,17 @@ Modalità reale → SMTP per le email, WhatsApp Cloud API (template approvati) p
 """
 import json
 import smtplib
+import ssl
 import urllib.request
 import urllib.error
 from dataclasses import dataclass
 from email.message import EmailMessage
+
+try:  # il Python di python.org su macOS non usa i certificati di sistema
+    import certifi
+    _SSL_CTX = ssl.create_default_context(cafile=certifi.where())
+except ImportError:
+    _SSL_CTX = ssl.create_default_context()
 
 
 @dataclass
@@ -64,7 +71,7 @@ def send_email(cfg, to_addr: str, subject: str, body: str) -> SendResult:
     try:
         with smtplib.SMTP(cfg["SMTP_HOST"], cfg["SMTP_PORT"], timeout=20) as s:
             if cfg.get("SMTP_TLS"):
-                s.starttls()
+                s.starttls(context=_SSL_CTX)
             if cfg.get("SMTP_USER"):
                 s.login(cfg["SMTP_USER"], cfg["SMTP_PASSWORD"] or "")
             s.send_message(msg)
@@ -110,11 +117,15 @@ def send_whatsapp_template(cfg, to_phone: str, purpose: str, params: list[str],
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=20, context=_SSL_CTX) as resp:
             data = json.loads(resp.read().decode())
             msg_id = (data.get("messages") or [{}])[0].get("id")
             return SendResult("inviato", provider_ref=msg_id)  # "accepted" dal provider; consegna via webhook
     except urllib.error.HTTPError as e:
-        return SendResult("errore", error=f"WhatsApp API HTTP {e.code}")
+        try:
+            detail = json.loads(e.read().decode()).get("error", {}).get("message", "")
+        except Exception:  # noqa: BLE001
+            detail = ""
+        return SendResult("errore", error=f"WhatsApp API HTTP {e.code}" + (f": {detail[:200]}" if detail else ""))
     except Exception as e:  # noqa: BLE001
         return SendResult("errore", error=f"Errore WhatsApp: {type(e).__name__}")
