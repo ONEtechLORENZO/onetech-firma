@@ -362,6 +362,10 @@ def send_request(conn, req, user, *, ip=None, ua=None) -> tuple[bool, str]:
                    f"Collegamento: {url if cfg('DEMO') else '[collegamento riservato]'}")
 
     if req["channel"] == "whatsapp":
+        # Su WhatsApp solo il messaggio dell'operatore, la scadenza e il collegamento.
+        body_public = ((f"{req['message']}\n" if req['message'] else "")
+                       + f"Il collegamento scade il {fmt_local(req['expires_at'], False)}.\n"
+                       f"Collegamento: {url if cfg('DEMO') else '[collegamento riservato]'}")
         result = send_whatsapp_template(current_app.config, addr, "link",
                                         [req["client_first_name"], req["title"]], button_param=token,
                                         text=body_public.replace("[collegamento riservato]", url))
@@ -508,11 +512,10 @@ def otp_send(conn, req, *, ip, ua) -> tuple[bool, str]:
     addr, masked = _otp_recipient(req)
     if not addr:
         return False, "Numero WhatsApp mancante."
-    text_public = (f"[WhatsApp] Codice di conferma per «{req['title']}»: ******. "
-                   f"Valido {cfg('OTP_TTL_SECONDS') // 60} minuti, uso singolo. (codice non archiviato nei messaggi)")
+    otp_text = f"Codice OTP: {{}}. Valido {cfg('OTP_TTL_SECONDS') // 60} minuti"
+    text_public = otp_text.format("******")  # il codice non viene archiviato nei messaggi
     result = send_whatsapp_template(current_app.config, addr, "otp", [code], button_param=code,
-                                    text=f"Codice di conferma per «{req['title']}»: {code}. "
-                                         f"Valido {cfg('OTP_TTL_SECONDS') // 60} minuti, uso singolo.")
+                                    text=otp_text.format(code))
     ok = result.status in ("simulato", "inviato")
     with transaction(conn):
         conn.execute("UPDATE otps SET invalidated=1 WHERE request_id=? AND used_at IS NULL", (req["id"],))
