@@ -16,7 +16,7 @@
       <dt>OTP via WhatsApp</dt><dd>{{ req.client_phone }} <div class="muted small">Servizio: {{ services.whatsapp }}</div></dd>
       <dt>Riquadro firma</dt><dd>{{ req.signer_role }}{% if req.place %} · {{ req.place }}{% endif %}</dd>
       <dt>Scadenza link</dt><dd>{{ fmt_local(req.expires_at, False) }}</dd>
-      {% if req.message %}<dt>Messaggio</dt><dd>{{ req.message }}</dd>{% endif %}
+      {% if message_preview %}<dt>{{ "Messaggio WhatsApp" if req.channel == "whatsapp" else "Messaggio" }}</dt><dd><div class="msg-body">{{ message_preview }}</div></dd>{% endif %}
     </dl>
     {% if problems %}
       <div class="flash flash-error"><strong>Prima di inviare:</strong><ul>{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul></div>

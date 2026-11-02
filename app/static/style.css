@@ -110,6 +110,12 @@ code { font-family: var(--mono); background: var(--brand-soft); color: var(--nav
 .big-check:hover { border-color: #c4bedd; }
 .big-check:has(input:checked) { border-color: var(--navy); background: var(--brand-soft); }
 
+/* variabili del messaggio */
+.var-box { margin: -6px 0 18px; padding: 12px 14px; background: #fbfaff; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.var-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.var-chip { font: inherit; font-family: var(--mono); font-size: .8rem; padding: 4px 10px; border-radius: 999px; border: 1px solid #dcd6fb; background: var(--brand-soft); color: var(--navy-2); cursor: pointer; transition: background .12s, border-color .12s; }
+.var-chip:hover { background: #e4dfff; border-color: var(--navy); }
+
 /* accesso */
 .auth-card { max-width: 420px; margin: 48px auto; padding: 32px; box-shadow: var(--shadow-lg); position: relative; overflow: hidden; }
 .auth-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: linear-gradient(90deg, var(--brand-light), var(--navy)); }

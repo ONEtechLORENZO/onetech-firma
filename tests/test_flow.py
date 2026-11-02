@@ -383,3 +383,22 @@ def test_real_mode_shows_not_configured(tmp_path):
     assert "non configurato" in r.get_data(as_text=True)
     row = db(app).execute("SELECT status, demo_link_token FROM requests WHERE id=?", (req_id,)).fetchone()
     assert row["status"] == "errore" and row["demo_link_token"] is None
+
+
+def test_message_variables(app):
+    from app import services
+    conn = db(app)
+    req = dict(conn.execute("SELECT * FROM requests WHERE client_first_name IS NOT NULL LIMIT 1").fetchone())
+    req.update(message="Ciao {nome} {COGNOME}, firma «{documento}» qui: {link} {sconosciuta}",
+               client_first_name="Mario", client_last_name="Rossi")
+    with app.app_context():
+        assert services.render_message(conn, req, "https://x/c/t") == \
+            f"Ciao Mario Rossi, firma «{req['title']}» qui: https://x/c/t {{sconosciuta}}"
+        text = services.whatsapp_link_text(conn, req, "https://x/c/t")
+    # {link} già nel messaggio: niente riga del link in coda, nessuna scadenza
+    assert "Link al documento" not in text and text.count("https://x/c/t") == 1
+    assert "scade" not in text
+    req["message"] = "Buongiorno"
+    with app.app_context():
+        assert services.whatsapp_link_text(conn, req, "https://x/c/t") == \
+            "Buongiorno\nLink al documento da firmare: https://x/c/t"

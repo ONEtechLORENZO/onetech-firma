@@ -23,3 +23,16 @@ document.querySelectorAll("input.upper").forEach(function (i) {
     }).then(function () { window.sessionStorage.setItem("geo-sent", "1"); note.textContent = "Posizione condivisa: verrà annotata nell'Audit Trail."; }).catch(function () {});
   }, function () { note.textContent = "Posizione non condivisa: nell'Audit Trail comparirà N/A."; }, { timeout: 8000, maximumAge: 60000 });
 })();
+
+// Variabili del messaggio: un clic inserisce {variabile} nel punto del cursore.
+document.querySelectorAll(".var-chip").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var t = document.getElementById("message");
+    if (!t) return;
+    var v = b.dataset.var, s = t.selectionStart, e = t.selectionEnd;
+    if (t.value.length - (e - s) + v.length > t.maxLength) return;
+    t.value = t.value.slice(0, s) + v + t.value.slice(e);
+    t.focus();
+    t.selectionStart = t.selectionEnd = s + v.length;
+  });
+});

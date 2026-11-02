@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import json
+import re
 import secrets
 from pathlib import Path
 
@@ -321,6 +322,51 @@ def _client_url(token):
     return f"{base_url()}/c/{token}"
 
 
+# Variabili utilizzabili nel messaggio al cliente: {nome}, {cognome}, ...
+MESSAGE_VARIABLES = {
+    "nome": "Nome del cliente",
+    "cognome": "Cognome del cliente",
+    "codice_fiscale": "Codice fiscale",
+    "documento": "Titolo del documento",
+    "scadenza": "Scadenza del link",
+    "operatore": "Nome dell'operatore",
+    "azienda": "Nome dell'azienda",
+    "link": "Collegamento per firmare",
+}
+
+
+def render_message(conn, req, link: str | None = None) -> str:
+    """Sostituisce le variabili {nome}, {link}, ... nel messaggio dell'operatore.
+    Le variabili sconosciute restano invariate."""
+    if not req["message"]:
+        return ""
+    user = conn.execute("SELECT name FROM users WHERE id=?", (req["user_id"],)).fetchone()
+    values = {
+        "nome": req["client_first_name"] or "",
+        "cognome": req["client_last_name"] or "",
+        "codice_fiscale": req["client_fiscal_code"] or "",
+        "documento": req["title"] or "",
+        "scadenza": fmt_local(req["expires_at"], False) if req["expires_at"] else "",
+        "operatore": user["name"] if user else "",
+        "azienda": org_name(conn, req["org_id"]),
+        "link": link if link is not None else "[collegamento]",
+    }
+    return re.sub(r"\{(\w+)\}", lambda m: values.get(m.group(1).lower(), m.group(0)), req["message"])
+
+
+def message_uses(req, name: str) -> bool:
+    return bool(req["message"]) and ("{%s}" % name) in req["message"].lower()
+
+
+def whatsapp_link_text(conn, req, link: str) -> str:
+    """Testo WhatsApp con il link: messaggio dell'operatore e, in coda, il link
+    (solo se il messaggio non lo contiene già come variabile {link})."""
+    lines = [render_message(conn, req, link)] if req["message"] else []
+    if not message_uses(req, "link"):
+        lines.append(f"Link al documento da firmare: {link}")
+    return "\n".join(lines)
+
+
 def send_request(conn, req, user, *, ip=None, ua=None) -> tuple[bool, str]:
     """Congela il documento compilato, genera il link e invia (simulato o reale)."""
     if req["status"] != "bozza":
@@ -357,15 +403,14 @@ def send_request(conn, req, user, *, ip=None, ua=None) -> tuple[bool, str]:
     body_public = (f"Gentile {req['client_first_name']} {req['client_last_name']},\n"
                    f"{user['name']} ({org_name(conn, req['org_id'])}) le ha inviato il documento "
                    f"«{req['title']}» da visualizzare e confermare.\n"
-                   + (f"Messaggio: {req['message']}\n" if req['message'] else "")
+                   + (f"Messaggio: {render_message(conn, req, url if cfg('DEMO') else '[collegamento riservato]')}\n"
+                      if req['message'] else "")
                    + f"Il collegamento scade il {fmt_local(req['expires_at'], False)}.\n"
                    f"Collegamento: {url if cfg('DEMO') else '[collegamento riservato]'}")
 
     if req["channel"] == "whatsapp":
         # Su WhatsApp solo il messaggio dell'operatore, la scadenza e il collegamento.
-        body_public = ((f"{req['message']}\n" if req['message'] else "")
-                       + f"Il collegamento scade il {fmt_local(req['expires_at'], False)}.\n"
-                       f"Collegamento: {url if cfg('DEMO') else '[collegamento riservato]'}")
+        body_public = whatsapp_link_text(conn, req, url if cfg('DEMO') else '[collegamento riservato]')
         result = send_whatsapp_template(current_app.config, addr, "link",
                                         [req["client_first_name"], req["title"]], button_param=token,
                                         text=body_public.replace("[collegamento riservato]", url))

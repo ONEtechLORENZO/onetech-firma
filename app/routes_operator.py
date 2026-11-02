@@ -243,7 +243,7 @@ def request_data(req_id):
             return redirect(url_for("operator.request_preview", req_id=req_id))
         form.update({"fiscal_code": cf, "phone": phone, "email": email})
     return render_template("op/request_data.html", req=req, form=form, errors=errors, step=2,
-                           max_days=current_app.config["LINK_MAX_DAYS"])
+                           max_days=current_app.config["LINK_MAX_DAYS"], variables=services.MESSAGE_VARIABLES)
 
 
 # ------------------------------------------------------------------ anteprima e invio
@@ -274,8 +274,11 @@ def request_preview(req_id):
         problems.append("Email mancante.")
     if not req["client_phone"]:
         problems.append("Cellulare mancante (serve per l'OTP via WhatsApp).")
+    conn = get_db()
+    message_preview = (services.whatsapp_link_text(conn, req, "[collegamento]") if req["channel"] == "whatsapp"
+                       else services.render_message(conn, req))
     return render_template("op/request_preview.html", req=req, doc=doc, page_count=doc["page_count"],
-                           problems=problems, step=3)
+                           problems=problems, step=3, message_preview=message_preview)
 
 
 @bp.route("/requests/<req_id>/preview/page/<int:n>.png")

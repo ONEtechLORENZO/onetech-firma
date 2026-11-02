@@ -8,7 +8,7 @@
     <p class="eyebrow">{{ org }}</p>
     <h1>{{ req.title }}</h1>
     <p>Gentile <strong>{{ req.client_first_name }} {{ req.client_last_name }}</strong>, {{ sender.name if sender else 'l\'operatore' }} le chiede di visualizzare e confermare questo documento.</p>
-    {% if req.message %}<blockquote class="quote">{{ req.message }}</blockquote>{% endif %}
+    {% if message %}<blockquote class="quote">{{ message }}</blockquote>{% endif %}
     <p class="muted small">Il collegamento scade il {{ fmt_local(req.expires_at, False) }}. Non è richiesta alcuna registrazione.</p>
   </section>
 

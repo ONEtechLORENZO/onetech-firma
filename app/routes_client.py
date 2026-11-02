@@ -47,7 +47,8 @@ def landing(token):
     recipient = mask_phone(req["client_phone"]) if req["channel"] == "whatsapp" else mask_email(req["client_email"])
     otp_pending = conn.execute("SELECT id, expires_at FROM otps WHERE request_id=? AND used_at IS NULL AND invalidated=0 "
                                "ORDER BY id DESC LIMIT 1", (req["id"],)).fetchone()
-    return render_template("client/sign.html", req=req, token=token, org=org, sender=sender,
+    message = services.render_message(conn, req, "questa pagina")
+    return render_template("client/sign.html", req=req, token=token, org=org, sender=sender, message=message,
                            recipient=recipient, otp_pending=otp_pending,
                            page_count=_page_count(req), otp_len=current_app.config["OTP_LENGTH"],
                            otp_minutes=current_app.config["OTP_TTL_SECONDS"] // 60)

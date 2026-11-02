@@ -9,7 +9,14 @@
   <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
   <h2>Richiesta</h2>
   <label>Titolo <input type="text" name="title" maxlength="120" required value="{{ form.title or '' }}">{% if errors.title %}<span class="err">{{ errors.title }}</span>{% endif %}</label>
-  <label>Messaggio al cliente (facoltativo) <textarea name="message" maxlength="500" rows="2">{{ form.message or '' }}</textarea></label>
+  <label>Messaggio al cliente (facoltativo) <textarea name="message" id="message" maxlength="500" rows="4">{{ form.message or '' }}</textarea></label>
+  <div class="var-box">
+    <span class="small muted">Inserisci una variabile: verrà sostituita con il dato reale al momento dell'invio.</span>
+    <div class="var-chips">
+      {% for key, label in variables.items() %}<button type="button" class="var-chip" data-var="{{ '{' ~ key ~ '}' }}" title="{{ label }}">{{ '{' ~ key ~ '}' }}</button>{% endfor %}
+    </div>
+    <span class="help">Se non usi <code>{link}</code>, su WhatsApp il link al documento viene aggiunto in fondo automaticamente.</span>
+  </div>
 
   <h2>Cliente</h2>
   <div class="row">
