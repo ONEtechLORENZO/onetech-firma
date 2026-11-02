@@ -35,6 +35,10 @@ class Config:
     # URL pubblico dei link cliente. Se vuoto, si usa l'indirizzo con cui l'operatore sta usando l'app.
     BASE_URL = os.environ.get("BASE_URL", "").rstrip("/")
 
+    # Se impostata sostituisce "demo1234" per gli operatori di prova e nasconde le credenziali dal login
+    # (necessaria quando l'app è raggiungibile da internet).
+    OPERATOR_PASSWORD = os.environ.get("OPERATOR_PASSWORD")
+
     MAX_PDF_MB = int(os.environ.get("MAX_PDF_MB", "10"))
     MAX_PAGES = int(os.environ.get("MAX_PAGES", "50"))
 

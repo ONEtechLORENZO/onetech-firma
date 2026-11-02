@@ -150,6 +150,10 @@ def ensure_seed(app):
     conn = sqlite3.connect(app.config["DB_PATH"])
     conn.row_factory = sqlite3.Row
     try:
+        if app.config.get("OPERATOR_PASSWORD"):
+            conn.execute("UPDATE users SET password_hash=?",
+                         (generate_password_hash(app.config["OPERATOR_PASSWORD"]),))
+            conn.commit()
         org = conn.execute("SELECT * FROM orgs LIMIT 1").fetchone()
         if org:
             return
@@ -159,14 +163,14 @@ def ensure_seed(app):
                      (org_id, "Banca Esempio S.p.A. (fittizia)", iso_utc()))
         conn.execute("INSERT INTO users(id, org_id, email, name, password_hash, created_at) VALUES (?,?,?,?,?,?)",
                      (user_id, org_id, "operatore@demo.local", "Maria Rossi (operatore demo)",
-                      generate_password_hash("demo1234"), iso_utc()))
+                      generate_password_hash(app.config.get("OPERATOR_PASSWORD") or "demo1234"), iso_utc()))
         # seconda organizzazione: serve a dimostrare l'isolamento dei dati
         org2 = new_id("ORG", 6)
         conn.execute("INSERT INTO orgs(id, name, created_at) VALUES (?,?,?)",
                      (org2, "Altra Banca S.p.A. (fittizia)", iso_utc()))
         conn.execute("INSERT INTO users(id, org_id, email, name, password_hash, created_at) VALUES (?,?,?,?,?,?)",
                      (new_id("USR", 6), org2, "altro@demo.local", "Luca Bianchi (altra banca)",
-                      generate_password_hash("demo1234"), iso_utc()))
+                      generate_password_hash(app.config.get("OPERATOR_PASSWORD") or "demo1234"), iso_utc()))
         conn.commit()
     finally:
         conn.close()

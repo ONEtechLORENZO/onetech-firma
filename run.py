@@ -26,5 +26,6 @@ if __name__ == "__main__":
     host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", "5050"))
     print(f"\n  {app.config['APP_NAME']} — modalità {app.config['MODE'].upper()}")
-    print(f"  Apri: http://localhost:{port}   (operatore demo: operatore@demo.local / demo1234)\n")
+    pwd = "password da OPERATOR_PASSWORD" if app.config.get("OPERATOR_PASSWORD") else "demo1234"
+    print(f"  Apri: http://localhost:{port}   (operatore: operatore@demo.local / {pwd})\n")
     app.run(host=host, port=port, debug=False)

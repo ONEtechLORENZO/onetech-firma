@@ -73,6 +73,7 @@ def create_app(test_config: dict | None = None) -> Flask:
             "APP_NAME": app.config["APP_NAME"],
             "APP_TAGLINE": app.config["APP_TAGLINE"],
             "DEMO": app.config["DEMO"],
+            "DEMO_CREDS": app.config["DEMO"] and not app.config.get("OPERATOR_PASSWORD"),
             "STATUS_LABELS": STATUS_LABELS,
             "EVENT_LABELS": EVENT_LABELS,
             "services": service_status(app.config),

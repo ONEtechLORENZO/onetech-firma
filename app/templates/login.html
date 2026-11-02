@@ -9,11 +9,11 @@
   <form method="post" class="form">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <input type="hidden" name="next" value="{{ next }}">
-    <label>Email <input type="email" name="email" required autocomplete="username" value="{% if DEMO %}operatore@demo.local{% endif %}"></label>
-    <label>Password <input type="password" name="password" required autocomplete="current-password" value="{% if DEMO %}demo1234{% endif %}"></label>
+    <label>Email <input type="email" name="email" required autocomplete="username" value="{% if DEMO_CREDS %}operatore@demo.local{% endif %}"></label>
+    <label>Password <input type="password" name="password" required autocomplete="current-password" value="{% if DEMO_CREDS %}demo1234{% endif %}"></label>
     <button class="btn btn-primary btn-block" type="submit">Accedi</button>
   </form>
-  {% if DEMO %}
+  {% if DEMO_CREDS %}
   <div class="hint">
     <strong>Credenziali demo</strong> (precompilate): <code>operatore@demo.local</code> / <code>demo1234</code><br>
     Seconda organizzazione, per mostrare l'isolamento dei dati: <code>altro@demo.local</code> / <code>demo1234</code>
